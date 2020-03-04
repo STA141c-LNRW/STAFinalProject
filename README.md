@@ -2,6 +2,10 @@
 
 Project [Link](https://github.com/UCDavis-STA-141C-Winter-2020/sta141c-lectures/blob/master/project.md) (from class)  
 
+Time line:  
+March 10 - presentation time  
+March 20 - due date
+
 # Data enginnering
 Your task is to write an R package which enables other users to carry out bag of little bootstraps for a certain model.
 - Your group should open a github organization for the R package.
@@ -11,9 +15,22 @@ Your task is to write an R package which enables other users to carry out bag of
 - Rcpp code could be used to speed up some operations
 - you should give your users options to make use of parallel processing or distributed computing.
 
-To-do:  
+# To-do:  
 
-Purpose of a package
+Purpose of the package
 1. Improve on base R
 2. Use to help analysis
+3. 
+
+Function ideas (to add to /R folder)
+1."BLB to logistic regression model, random forests, or neural networks"
+2. Rcpp code (optimizing sampling using cpp)
+
+Implementation of BLB / Parallel processing / Distributed computing
+1. 
+
+Report/Documentation
+1. 
+
+
 
