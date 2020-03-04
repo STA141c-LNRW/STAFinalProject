@@ -4,7 +4,7 @@
 \alias{print_goal}
 \title{Brief Description}
 \usage{
-print_goal()
+print_goal(a, b)
 }
 \arguments{
 \item{a}{factor}

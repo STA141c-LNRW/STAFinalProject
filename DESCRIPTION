@@ -1,5 +1,5 @@
 Package: STAFinalProject
-Title: What the Package Does (One Line, Title Case)
+Title: Optimizes the drawbacks of base R
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "Ricardo",
