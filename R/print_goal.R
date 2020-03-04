@@ -1,8 +1,11 @@
-#' Make a sorted frequency table for a factor
+#' Brief Description
 #'
-#' @param x factor
+#' Long Description
 #'
-#' @return A tibble
+#' @param a factor
+#' @param b factor
+#'
+#' @return char
 #' @export
 #' @examples
 #'
