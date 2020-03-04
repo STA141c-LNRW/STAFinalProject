@@ -6,11 +6,6 @@
 \usage{
 newfoo()
 }
-\arguments{
-\item{a}{factor}
-
-\item{b}{factor}
-}
 \value{
 char
 }
