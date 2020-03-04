@@ -22,14 +22,14 @@ Purpose of the package
 2. Use to help analysis
 3. 
 
-Function ideas (to add to /R folder)
+Function ideas (to add to /R folder)  
 1."BLB to logistic regression model, random forests, or neural networks"
 2. Rcpp code (optimizing sampling using cpp)
 
-Implementation of BLB / Parallel processing / Distributed computing
+Implementation of BLB / Parallel processing / Distributed computing  
 1. 
 
-Report/Documentation
+Report/Documentation  
 1. 
 
 
