@@ -1,6 +1,7 @@
 # STAFinalProjectW2020
 
 Project [Link](https://github.com/UCDavis-STA-141C-Winter-2020/sta141c-lectures/blob/master/project.md) (from class)  
+How to make a package [link](https://r-pkgs.org/)  
 
 Time line:  
 March 10 - presentation time  
@@ -20,7 +21,7 @@ Your task is to write an R package which enables other users to carry out bag of
 Purpose of the package
 1. Improve on base R
 2. Use to help analysis
-3. 
+3. Build on HW/lecture examples  
 
 Function ideas (to add to /R folder)  
 1."BLB to logistic regression model, random forests, or neural networks"
