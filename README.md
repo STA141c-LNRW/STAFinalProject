@@ -24,8 +24,15 @@ Purpose of the package
 3. Build on HW/lecture examples  
 
 Function ideas (to add to /R folder)  
-1."BLB to logistic regression model, random forests, or neural networks"
+1."BLB to logistic regression model, random forests, or neural networks"  
 2. Rcpp code (optimizing sampling using cpp)
+
+What we're doing
+1. C++ to optimize the sampling function - Luke, William  
+2. Multiple linear regression - 
+  a. estimatation of mean, variation, slope
+3. Prediction intervals
+  a. 
 
 Implementation of BLB / Parallel processing / Distributed computing  
 1. 
