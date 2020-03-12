@@ -1,4 +1,4 @@
-#' Brief Description
+#' Calculates the slope between two variables
 #'
 #' Long Description
 #'
