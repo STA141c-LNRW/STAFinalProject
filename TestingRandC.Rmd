@@ -1,0 +1,133 @@
+---
+title: "TestingRandC"
+author: "William Shih"
+date: "3/17/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning = FALSE, message = FALSE}
+library(Rcpp)
+library(RcppArmadillo)
+library(rbenchmark)
+set.seed(121)
+sourceCpp("C/calc_slope.cpp")
+sourceCpp("C/linreg.cpp")
+sourceCpp("C/lr_coefficient_CI.cpp")
+source("R/calc_slope.R")
+source("R/linreg.R")
+source("R/lr_coefficient_CI.R")
+
+```
+
+
+
+```{r, cache = TRUE}
+Random = runif(200000,0,100)
+AT = data.frame(x = 1:200000, y = 1:200000 + Random)
+
+
+x1 = runif(200000,0,1000) + runif(200000, 500, 1000)
+x2 = runif(200000,0,2000) + runif(200000, 1000, 2000)
+x3 = runif(200000,2000,3000) + runif(200000, 1000, 2000)
+x4 = runif(200000,2500,2750) + runif(200000, 1000, 2000)
+y = x1 + x2 + x3 + x4 + Random^2 + runif(20000, 500, 777)
+xFrame = as.matrix(data.frame(x1,x2,x3,x4))
+
+
+
+
+knitr::kable((benchmark("C++" = {calc_slopeC(AT)},
+          "R" = {calc_slope(AT)},
+          replications = 1000,
+          columns = c("test","replications","elapsed","relative","user.self","sys.self"))))
+```
+
+
+```{r, cache = TRUE}
+#p = 4
+knitr::kable((benchmark("lm" = {lm(y ~ xFrame)},
+          ".lm.fit" = {.lm.fit(as.matrix(data.frame(1, xFrame)), y)},
+          "lm.fit" = {lm.fit(as.matrix(data.frame(1, xFrame)), y)},
+          "C++ without std::inner_product" = {linear_regC(xFrame, y)},
+          "C++ with std::inner_product" = {linear_regC2(xFrame, y)},
+          "C++ with RcppArmadillo" = {linear_regC3(xFrame, y)},
+          "R" = {linear_reg(xFrame, y)},
+            replications = 100,
+            columns = c("test","replications","elapsed","relative","user.self","sys.self"))))
+```
+
+
+```{r, cache = TRUE}
+# p =1
+knitr::kable((benchmark("lm" = {lm(AT[[2]] ~ AT[[1]])},
+          ".lm.fit" = {.lm.fit(as.matrix(data.frame(1, AT[[1]])), as.vector(AT[[2]]))},
+          "lm.fit" = {lm.fit(as.matrix(data.frame(1, AT[[1]])), as.vector(AT[[2]]))},
+          "C++ without std::inner_product" = {linear_regC(as.matrix(AT[[1]]), as.vector(AT[[2]]))},
+          "C++ with std::inner_product" = {linear_regC2(as.matrix(AT[[1]]), as.vector(AT[[2]]))},
+          "C++ with RcppArmadillo" = {linear_regC3(as.matrix(AT[[1]]), as.vector(AT[[2]]))},
+          "R" = {linear_reg(as.matrix(AT[[1]]), as.vector(AT[[2]]))},
+          replications = 100,
+          columns = c("test","replications","elapsed","relative","user.self","sys.self"))))
+```
+
+
+```{r, cache = TRUE}
+#p = 40
+x1 = runif(8000000,0,1000) + runif(8000000, 500, 1000)
+FourtyX = matrix(x1, nrow = 200000, ncol = 40)
+knitr::kable((benchmark("lm" = {lm(y ~ FourtyX)},
+          ".lm.fit" = {.lm.fit(as.matrix(data.frame(1, FourtyX)), y)},
+          "lm.fit" = {lm.fit(as.matrix(data.frame(1, FourtyX)), y)},
+          "C++ without std::inner_product" = {linear_regC(FourtyX, y)},
+          "C++ with std::inner_product" = {linear_regC2(FourtyX, y)},
+          "C++ with RcppArmadillo" = {linear_regC3(FourtyX, y)},
+          "R" = {linear_reg(FourtyX, y)},
+          replications = 1,
+          columns = c("test","replications","elapsed","relative","user.self","sys.self"))))
+```
+
+
+```{r, cache = TRUE}
+knitr::kable(benchmark("%*%" = {t(FourtyX) %*% FourtyX},
+          "multiply without std::inner_product" = {multiply(t(FourtyX), FourtyX)},
+          "multiply with std::inner_product" = {multiply2(t(FourtyX), FourtyX)},
+          "multiply with RcppArmadillo" = {armamultiply(t(FourtyX), FourtyX)},
+          replications = 1,
+          columns = c("test","replications","elapsed","relative","user.self","sys.self")))
+```
+
+
+```{r, cache = TRUE}
+knitr::kable(benchmark("%*%" = {t(xFrame) %*% xFrame},
+          "multiply without std::inner_product" = {multiply(t(xFrame), xFrame)},
+          "multiply with std::inner_product" = {multiply2(t(xFrame), xFrame)},
+          "multiply with RcppArmadillo" = {armamultiply(t(xFrame), xFrame)},
+          replications = 100,
+          columns = c("test","replications","elapsed","relative","user.self","sys.self")))
+
+```
+
+
+```{r, cache = TRUE}
+knitr::kable(benchmark("C++ using Boost" = {tc(0.99, 55)},
+          "C++ calling R" = {tr(0.99,55)},
+          "R" = {qt(0.99, 55)},
+          replications = 100000),
+          columns = c("test","replications","elapsed","relative","user.self","sys.self"))
+  
+```
+
+
+```{r, cache = TRUE}
+z = linear_reg(FourtyX, y)
+knitr::kable(benchmark("C++" = {lr_coefficient_CI_C(z, 0.95)},
+          "R" = {lr_coefficient_CI(z, 0.95)},
+          replications = 10000),
+          columns = c("test","replications","elapsed","relative","user.self","sys.self"))
+
+```
+
