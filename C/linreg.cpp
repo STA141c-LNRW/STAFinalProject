@@ -8,6 +8,12 @@ arma::mat armamultiply(arma::mat x, arma::mat y){
   return x*y;
 }
 
+
+// [[Rcpp::export]]
+arma::mat armainverse(arma::mat x){
+  return arma::inv(x);
+}
+
 // [[Rcpp::export]]
 NumericMatrix multiply(NumericMatrix x, NumericMatrix y){
   int one = x.nrow();
@@ -15,11 +21,8 @@ NumericMatrix multiply(NumericMatrix x, NumericMatrix y){
   int three = x.ncol();
   NumericMatrix z(one,two);
   for (int i = 0; i < one; i++){
-    // i is rows of tm1, which should be p
     for (int j = 0; j < two; j++){
-      // j is columns of m1, which should be p
       for (int k = 0; k < three; k++){
-        // k is columns of tm1, which should be n
         z(i,j) += x(i,k) * y(k,j);
       }
     }
@@ -31,15 +34,17 @@ NumericMatrix multiply(NumericMatrix x, NumericMatrix y){
 NumericMatrix multiply2(NumericMatrix x, NumericMatrix y){
   int one = x.nrow();
   int two = y.ncol();
+  int travel = x.ncol();
   NumericMatrix z(one,two);
-  NumericVector Row, Column;
+  NumericMatrix transx(travel, one);
+  for (int i = 0; i < travel; i++){
+    for (int j = 0; j < one; j++){
+      transx(i, j) = x(j, i);
+    }
+  }
   for (int i = 0; i < one; i++){
-    // i is rows of tm1, which should be p
-    Row = x(i,_);
     for (int j = 0; j < two; j++){
-      Column = y(_,j);
-      // j is columns of m1, which should be p
-      z(i,j) = std::inner_product(Row.begin(), Row.end(), Column.begin(), 0);
+      z(i,j) = std::inner_product(transx.begin()+i*travel, transx.begin()+(i+1)*travel, y.begin()+j*travel, 0.);
     }
   }
   return z;
@@ -138,19 +143,36 @@ List linear_regC2(NumericMatrix x, NumericVector y){
   NumericMatrix m1(n,p);
   std::fill(m1.begin(), m1.begin() + n, 1);
   std::copy(x.begin(), x.end(), m1.begin() + n);
-  NumericMatrix tm1 = transpose(m1);
   y.attr("dim") = Dimension(n,1);
-  // Solution to OLS is B = (X^T * X)^-1 * X^T * y
-  NumericMatrix xtxinverse = inverse(multiply2(tm1, m1));
-  NumericMatrix coeffs = multiply2(multiply2(xtxinverse, tm1),
-                                   as<NumericMatrix>(y));
-  NumericMatrix fv = multiply2(m1, coeffs);
-  NumericMatrix res(n,1);
-  for (int i = 0; i < n; i++){
-    res[i] = y[i] - fv[i];
+  NumericMatrix z(p,p);
+  NumericMatrix tm1(p, n);
+  for (int i = 0; i < tm1.nrow(); i++){
+    for (int j = 0; j < tm1.ncol(); j++){
+      tm1(i, j) = m1(j, i);
+    }
   }
+  for (int i = 0; i < p; i++){
+    for (int j = 0; j < p; j++){
+      z(i,j) = std::inner_product(m1.begin()+i*n, m1.begin()+(i+1)*n, m1.begin()+j*n, 0.);
+    }
+  }
+  // Solution to OLS is B = (X^T * X)^-1 * X^T * y
+  // xtxinverse is p * p
+  // tm1 is p * n
+  // intermed is n * p and we have intermed times y (y is n*1)
+  NumericMatrix xtxinverse = inverse(z);
+  NumericMatrix intermed = transpose(multiply2(xtxinverse, tm1));
+  NumericMatrix coeffs(p, 1);
+  for (int i = 0; i < p; i++){
+    coeffs[i] = std::inner_product(intermed.begin()+i*intermed.nrow(),
+                               intermed.begin()+(i+1)*intermed.nrow(), y.begin(), 0.);
+  }
+  NumericMatrix fv(n, 1);
+  NumericMatrix res(n,1);
   double s2 = 0;
-  for (int i = 0; i < res.size(); i++){
+  for (int i = 0; i < n; i++){
+    fv[i] = std::inner_product(tm1.begin()+i*p, tm1.begin()+(i+1)*p, coeffs.begin(), 0.);
+    res[i] = y[i] - fv[i];
     s2 += res[i]*res[i];
   }
   s2 = s2/(n-p);

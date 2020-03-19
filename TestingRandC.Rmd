@@ -9,7 +9,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r, warning = FALSE, message = FALSE}
+```{r, warning = FALSE, message = FALSE, cache = TRUE}
 library(Rcpp)
 library(RcppArmadillo)
 library(rbenchmark)
@@ -17,16 +17,18 @@ set.seed(121)
 sourceCpp("C/calc_slope.cpp")
 sourceCpp("C/linreg.cpp")
 sourceCpp("C/lr_coefficient_CI.cpp")
+sourceCpp("C/lr_prediction_interval.cpp")
 source("R/calc_slope.R")
 source("R/linreg.R")
 source("R/lr_coefficient_CI.R")
+source("R/lr_prediction_interval.R")
 
 ```
 
 ## Benchmark calculating slope of p = 1, n = 200,000 with 1000 replications
 
 ```{r, echo = FALSE, cache = TRUE}
-Random = runif(200000,0,100)
+Random = runif(200000,0,100000)
 AT = data.frame(x = 1:200000, y = 1:200000 + Random)
 
 
@@ -34,66 +36,35 @@ x1 = runif(200000,0,1000) + runif(200000, 500, 1000)
 x2 = runif(200000,0,2000) + runif(200000, 1000, 2000)
 x3 = runif(200000,2000,3000) + runif(200000, 1000, 2000)
 x4 = runif(200000,2500,2750) + runif(200000, 1000, 2000)
+```
+
+
+
+```{r, echo = FALSE, cache = TRUE}
 y = x1 + x2 + x3 + x4 + Random^2 + runif(20000, 500, 777)
 xFrame = as.matrix(data.frame(x1,x2,x3,x4))
-
-
-
-
-knitr::kable((benchmark("C++" = {calc_slopeC(AT)},
-          "R" = {calc_slope(AT)},
-          replications = 1000,
-          columns = c("test","replications","elapsed","relative","user.self","sys.self"))))
+x1 = runif(8000000,0,1000) + runif(8000000, 500, 1181)
 ```
 
-## Benchmark p = 400 and n = 200,000 Linear Regression with 100 replications
 
 ```{r, echo = FALSE, cache = TRUE}
-#p = 4
-knitr::kable((benchmark("lm" = {lm(y ~ xFrame)},
-          ".lm.fit" = {.lm.fit(as.matrix(data.frame(1, xFrame)), y)},
-          "lm.fit" = {lm.fit(as.matrix(data.frame(1, xFrame)), y)},
-          "C++ without std::inner_product" = {linear_regC(xFrame, y)},
-          "C++ with std::inner_product" = {linear_regC2(xFrame, y)},
-          "C++ with RcppArmadillo" = {linear_regC3(xFrame, y)},
-          "R" = {linear_reg(xFrame, y)},
-            replications = 100,
-            columns = c("test","replications","elapsed","relative","user.self","sys.self"))))
-```
-
-## Benchmark p = 1 and n = 200,000 Linear Regression with 100 replications 
-
-```{r, echo = FALSE, cache = TRUE}
-# p =1
-knitr::kable((benchmark("lm" = {lm(AT[[2]] ~ AT[[1]])},
-          ".lm.fit" = {.lm.fit(as.matrix(data.frame(1, AT[[1]])), as.vector(AT[[2]]))},
-          "lm.fit" = {lm.fit(as.matrix(data.frame(1, AT[[1]])), as.vector(AT[[2]]))},
-          "C++ without std::inner_product" = {linear_regC(as.matrix(AT[[1]]), as.vector(AT[[2]]))},
-          "C++ with std::inner_product" = {linear_regC2(as.matrix(AT[[1]]), as.vector(AT[[2]]))},
-          "C++ with RcppArmadillo" = {linear_regC3(as.matrix(AT[[1]]), as.vector(AT[[2]]))},
-          "R" = {linear_reg(as.matrix(AT[[1]]), as.vector(AT[[2]]))},
-          replications = 100,
-          columns = c("test","replications","elapsed","relative","user.self","sys.self"))))
-```
-
-## Benchmark p = 40 and n = 200,000 Linear Regression with 1 replication
-
-```{r, echo = FALSE, cache = TRUE}
-#p = 40
-x1 = runif(8000000,0,1000) + runif(8000000, 500, 1000)
 FourtyX = matrix(x1, nrow = 200000, ncol = 40)
-knitr::kable((benchmark("lm" = {lm(y ~ FourtyX)},
-          ".lm.fit" = {.lm.fit(as.matrix(data.frame(1, FourtyX)), y)},
-          "lm.fit" = {lm.fit(as.matrix(data.frame(1, FourtyX)), y)},
-          "C++ without std::inner_product" = {linear_regC(FourtyX, y)},
-          "C++ with std::inner_product" = {linear_regC2(FourtyX, y)},
-          "C++ with RcppArmadillo" = {linear_regC3(FourtyX, y)},
-          "R" = {linear_reg(FourtyX, y)},
-          replications = 1,
+```
+
+
+```{r, echo = FALSE, cache = TRUE}
+knitr::kable((benchmark("C++" = {calc_slopeC(AT)},
+          "lm.fit$coefficients[[2]]" = {lm.fit(as.matrix(data.frame(1, AT[[1]])), AT[[2]])$coefficients[[2]]},
+          "lm$coefficients[[2]]" = {lm(y ~ x, data = AT)$coefficients[[2]]},
+          "R" = {calc_slope(AT)},
+          replications = 1000, order = "elapsed",
           columns = c("test","replications","elapsed","relative","user.self","sys.self"))))
 ```
 
-## Benchmark multiplying 40\*200000 by 200000\*40 matrix
+
+
+
+## Benchmark multiplying 40\*200000 by 200000\*40 matrix with 5 replications
 
 
 ```{r, echo = FALSE, cache = TRUE}
@@ -101,7 +72,7 @@ knitr::kable(benchmark("%*%" = {t(FourtyX) %*% FourtyX},
           "C++ without std::inner_product" = {multiply(t(FourtyX), FourtyX)},
           "C++ with std::inner_product" = {multiply2(t(FourtyX), FourtyX)},
           "C++ with RcppArmadillo" = {armamultiply(t(FourtyX), FourtyX)},
-          replications = 1,
+          replications = 5, order = "elapsed",
           columns = c("test","replications","elapsed","relative","user.self","sys.self")))
 ```
 
@@ -112,10 +83,68 @@ knitr::kable(benchmark("%*%" = {t(xFrame) %*% xFrame},
           "C++ without std::inner_product" = {multiply(t(xFrame), xFrame)},
           "C++ with std::inner_product" = {multiply2(t(xFrame), xFrame)},
           "C++ with RcppArmadillo" = {armamultiply(t(xFrame), xFrame)},
-          replications = 100,
+          replications = 100, order = "elapsed",
           columns = c("test","replications","elapsed","relative","user.self","sys.self")))
 
 ```
+
+
+## Benchmark inverting 40\*40 matrix with 100,000 replications
+```{r, echo = FALSE, cache = TRUE}
+InvertThis = t(FourtyX) %*% FourtyX
+knitr::kable(benchmark("solve" = {solve(InvertThis)},
+          "C++ with RcppArmadillo" = {armainverse(InvertThis)},
+          "C++ with Gauss-Jordan Elimination" = {inverse(InvertThis)},
+          replications = 100000, order = "elapsed",
+          columns = c("test","replications","elapsed","relative","user.self","sys.self")))
+```
+
+
+## Benchmark p = 4 and n = 200,000 Linear Regression with 100 replications
+
+```{r, echo = FALSE, cache = TRUE}
+#p = 4
+knitr::kable((benchmark("lm" = {lm(y ~ xFrame)},
+          ".lm.fit" = {.lm.fit(as.matrix(data.frame(1, xFrame)), y)},
+          "lm.fit" = {lm.fit(as.matrix(data.frame(1, xFrame)), y)},
+          "C++ without std::inner_product" = {linear_regC(xFrame, y)},
+          "C++ with std::inner_product" = {linear_regC2(xFrame, y)},
+          "C++ with RcppArmadillo" = {linear_regC3(xFrame, y)},
+          "R" = {linear_reg(xFrame, y)},
+            replications = 100, order = "elapsed",
+            columns = c("test","replications","elapsed","relative","user.self","sys.self"))))
+```
+
+## Benchmark p = 1 and n = 200,000 Linear Regression with 200 replications 
+
+```{r, echo = FALSE, cache = TRUE}
+# p =1
+knitr::kable((benchmark("lm" = {lm(AT[[2]] ~ AT[[1]])},
+          ".lm.fit" = {.lm.fit(as.matrix(data.frame(1, AT[[1]])), as.vector(AT[[2]]))},
+          "lm.fit" = {lm.fit(as.matrix(data.frame(1, AT[[1]])), as.vector(AT[[2]]))},
+          "C++ without std::inner_product" = {linear_regC(as.matrix(AT[[1]]), as.vector(AT[[2]]))},
+          "C++ with std::inner_product" = {linear_regC2(as.matrix(AT[[1]]), as.vector(AT[[2]]))},
+          "C++ with RcppArmadillo" = {linear_regC3(as.matrix(AT[[1]]), as.vector(AT[[2]]))},
+          "R" = {linear_reg(as.matrix(AT[[1]]), as.vector(AT[[2]]))},
+          replications = 200, order = "elapsed",
+          columns = c("test","replications","elapsed","relative","user.self","sys.self"))))
+```
+
+## Benchmark p = 40 and n = 200,000 Linear Regression with 5 replications
+
+```{r, echo = FALSE, cache = TRUE}
+#p = 40
+knitr::kable((benchmark("lm" = {lm(y ~ FourtyX)},
+          ".lm.fit" = {.lm.fit(as.matrix(data.frame(1, FourtyX)), y)},
+          "lm.fit" = {lm.fit(as.matrix(data.frame(1, FourtyX)), y)},
+          "C++ without std::inner_product" = {linear_regC(FourtyX, y)},
+          "C++ with std::inner_product" = {linear_regC2(FourtyX, y)},
+          "C++ with RcppArmadillo" = {linear_regC3(FourtyX, y)},
+          "R" = {linear_reg(FourtyX, y)},
+          replications = 5, order = "elapsed",
+          columns = c("test","replications","elapsed","relative","user.self","sys.self"))))
+```
+
 
 ## Benchmark calling t distribution with 100,000 replications
 
@@ -123,22 +152,49 @@ knitr::kable(benchmark("%*%" = {t(xFrame) %*% xFrame},
 knitr::kable(benchmark("C++ using Boost" = {tc(0.99, 55)},
           "C++ calling R" = {tr(0.99,55)},
           "R" = {qt(0.99, 55)},
-          replications = 100000,
+          replications = 100000, order = "elapsed",
           columns = c("test","replications","elapsed","relative","user.self","sys.self")))
   
 ```
 
-## Benchmark confidence interval of linear regression result with 10,000 replications
+## Benchmark 95% confidence interval of linear regression (p = 20, n = 200,000) result with 10,000 replications
 
 ```{r, echo = FALSE, cache = TRUE}
-z = linear_reg(FourtyX, y)
-knitr::kable(benchmark("C++" = {lr_coefficient_CI_C(z, 0.95)},
-          "R" = {lr_coefficient_CI(z, 0.95)},
-          replications = 10000,
+ThirtyX = FourtyX[,1:20]
+```
+
+
+```{r, echo = FALSE, cache = TRUE}
+colnames(ThirtyX) = c(paste0("X",1:20))
+l = lm(y ~ ., data = data.frame(cbind(ThirtyX,y)))
+l$effects = NULL
+```
+
+```{r, echo = FALSE, cache = TRUE}
+z = linear_reg(ThirtyX, y)
+
+knitr::kable(benchmark("C++" = {lr_coefficient_CI_C(z, 0.05)},
+          "R" = {lr_coefficient_CI(z, 0.05)},
+          "confint.lm" = {confint.lm(l)},
+          replications = 10000, order = "elapsed",
           columns = c("test","replications","elapsed","relative","user.self","sys.self")))
 
 ```
 
+## Benchmark 95% prediction interval of linear regression (p = 20, n = 200,000) result with 10,000 replications
+
+```{r, echo = FALSE, cache = TRUE}
+data = runif(21,0,10)
+data = data.frame(t(data))
+datanum = as.numeric(data)[-1]
+colnames(data) = names(l$coefficients)[-1]
+knitr::kable(benchmark("C++ with RcppArmadillo" = {lr_prediction_interval_C(z, datanum, 0.05)},
+          "C++ with std::inner_product" = {lr_prediction_interval_C2(z, datanum, 0.05)},             
+          "R" = {lr_prediction_interval(z, datanum, 0.05)},
+          "predict.lm" = {predict(l, data, interval = "prediction", level = 0.95)},
+          replications = 10000, order = "elapsed",
+          columns = c("test","replications","elapsed","relative","user.self","sys.self")))
+```
 
 
 # Code Appendix

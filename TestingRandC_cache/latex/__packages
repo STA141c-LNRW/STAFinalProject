@@ -1,4 +1,4 @@
 base
 Rcpp
-rbenchmark
 RcppArmadillo
+rbenchmark
