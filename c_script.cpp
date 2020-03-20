@@ -1,34 +1,17 @@
+
+//[[Rcpp::depends(BH)]]
+
 #include <Rcpp.h>
 #include <stdlib.h>
+#include <boost/math/distributions.hpp>
+#include <boost/random.hpp>
+#include <math.h>
+#include <cmath>
+
 using namespace Rcpp;
 
-// This is a simple example of exporting a C++ function to R. You can
-// source this function into an R session using the Rcpp::sourceCpp
-// function (or via the Source button on the editor toolbar). Learn
-// more about Rcpp at:
-//
-//   http://www.rcpp.org/
-//   http://adv-r.had.co.nz/Rcpp.html
-//   http://gallery.rcpp.org/
-//
-
-// [[Rcpp::export]]
-NumericVector timesTwo(NumericVector x) {
-  return x * 2;
-}
-
-
-// You can include R code blocks in C++ files processed with sourceCpp
-// (useful for testing and development). The R code will be automatically
-// run after the compilation.
-//
-
-/*** R
-timesTwo(42)
-*/
-
 //[[Rcpp::export]]
-NumericVector sammy(int x, NumericVector y){
+NumericVector sammy(NumericVector y, int x){
   NumericVector sample;
   for(int i=0; i<x; i++){
     int index=rand() % y.size();
@@ -36,12 +19,40 @@ NumericVector sammy(int x, NumericVector y){
   }
   return(sample);
 }
-
 /***R
-sammy(3,10:20)
+sammy(10:20, 3)
 */
 
+//[[Rcpp::export]]
+NumericVector cnorm(int n, double meen, double sdev){
+  boost::mt19937 generator(123);
+  NumericVector sample;
+  for(int i=0; i<n; i++){
+    boost::normal_distribution<double> normdist(meen, sdev);
+    double draw = normdist(generator);
+    sample.insert(i,draw);
+  }
+  return(sample);
+}
 
+/***R
+cnorm(5, 50, 5)
+*/
+
+//[[Rcpp::export]]
+NumericVector cgamma(int n, double alpha, double beta){
+  boost::mt19937 generator(123);
+  NumericVector sample;
+  for(int i=0; i<n; i++){
+    boost::gamma_distribution<double> gdist(alpha, beta);
+    int draw = gdist(generator);
+    sample.insert(i,draw);
+  }
+  return(sample);
+}
+/***R
+cgamma(5, 6, 2)
+*/
 
 
 
