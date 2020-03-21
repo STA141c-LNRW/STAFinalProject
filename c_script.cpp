@@ -19,9 +19,7 @@ NumericVector sammy(NumericVector y, int x){
   }
   return(sample);
 }
-/***R
-sammy(10:20, 3)
-*/
+
 
 //[[Rcpp::export]]
 NumericVector cnorm(int n, double meen, double sdev){
@@ -35,9 +33,7 @@ NumericVector cnorm(int n, double meen, double sdev){
   return(sample);
 }
 
-/***R
-cnorm(5, 50, 5)
-*/
+
 
 //[[Rcpp::export]]
 NumericVector cgamma(int n, double alpha, double beta){
@@ -50,9 +46,7 @@ NumericVector cgamma(int n, double alpha, double beta){
   }
   return(sample);
 }
-/***R
-cgamma(5, 6, 2)
-*/
+
 
 
 
